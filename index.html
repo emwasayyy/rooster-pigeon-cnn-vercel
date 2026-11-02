@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rooster vs. Pigeon CNN Classifier | Muhammad Wasay Rafiq</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 24px; line-height: 1.6; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    h1, h2, h3 { margin-top: 0; color: #0f172a; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+    .btn { background: #2563eb; color: #fff; padding: 10px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; border: none; cursor: pointer; font-size: 14px; }
+    .btn.secondary { background: #475569; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    img.diagram { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; }
+    #preview { max-width: 260px; border-radius: 8px; margin-top: 12px; display: none; border: 1px solid #cbd5e1; }
+    .result-box { background: #f1f5f9; padding: 16px; border-radius: 8px; font-size: 16px; min-height: 100px; }
+    @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Deep Learning Semester Project: Rooster vs. Pigeon CNN Classification</h1>
+      <p><strong>Student:</strong> Muhammad Wasay Rafiq (SU92-BCSFM-F24-002) | <strong>Instructor:</strong> Dr. Munir Ahmad | <strong>Superior University Lahore</strong></p>
+      <div class="btn-row">
+        <a class="btn" href="/Readme.txt" target="_blank">View Readme.txt (For AI Grader)</a>
+        <a class="btn secondary" href="YOUR_GOOGLE_DRIVE_DATASET_LINK" target="_blank">Google Drive Dataset (8,717 Images)</a>
+        <a class="btn secondary" href="YOUR_GOOGLE_DRIVE_EXPORTS_LINK" target="_blank">Download Trained Models & Weights (.keras / .h5)</a>
+        <a class="btn secondary" href="YOUR_GOOGLE_DRIVE_REPORT_LINK" target="_blank">Download Project Report (PDF)</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>1. Live Image Classification (Custom CNN & Transfer Learning)</h2>
+      <div class="grid">
+        <div>
+          <label><strong>Step 1: Select Input Image (Rooster or Pigeon):</strong></label><br/>
+          <input type="file" id="imageUpload" accept="image/*" style="margin: 10px 0;" /><br/>
+          <label><strong>Step 2: Choose Model Architecture:</strong></label><br/>
+          <select id="modelSelect" style="padding: 8px; width: 100%; max-width: 320px; margin: 10px 0;">
+            <option value="both">Compare Both Models (Custom CNN + MobileNetV2)</option>
+            <option value="custom">Custom Self-Designed CNN Only</option>
+            <option value="tl">Transfer Learning (MobileNetV2) Only</option>
+          </select><br/>
+          <button class="btn" id="classifyBtn" onclick="runInference()">Classify Image</button>
+          <br/><img id="preview" alt="Uploaded Image Preview" />
+        </div>
+        <div>
+          <h3>Prediction Results</h3>
+          <div id="predictionResult" class="result-box">Loading CNN models into browser memory...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2. Problem Statement & Dataset Details</h2>
+      <p><strong>Problem Statement:</strong> Automated binary classification of bird images into <strong>Rooster</strong> and <strong>Pigeon</strong> categories under unconstrained real-world backgrounds using both a custom-designed Convolutional Neural Network (CNN) and a Transfer Learning model (MobileNetV2).</p>
+      <ul>
+        <li><strong>Dataset Source:</strong> Scraped from public websites and organized into two folders inside <code>Dataset_for_CNN_model</code>.</li>
+        <li><strong>Class Counts:</strong> 4,450 Rooster images and 4,267 Pigeon images (8,717 total images; 80% Training / 20% Validation split; 0 corrupted images).</li>
+        <li><strong>Preprocessing & Augmentation:</strong> RGB standardization, 224x224 resizing, pixel rescaling, RandomHorizontalFlip, RandomRotation (15%), RandomZoom (15%), and RandomContrast (10%).</li>
+        <li><strong>Custom CNN Parameters:</strong> 4 Conv2D blocks (32, 64, 128, 256 filters, 3x3 kernels, <code>same</code> padding, ReLU, BatchNormalization, 2x2 MaxPooling) followed by Flatten, Dense (256), Dropout (0.5), and Sigmoid output (13,235,905 total parameters).</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>3. Network Architecture Diagrams & Training Curves</h2>
+      <div class="grid">
+        <div><h4>Custom CNN Training Metrics</h4><img class="diagram" src="/custom_cnn_metrics.png" alt="Custom CNN Metrics" /></div>
+        <div><h4>Transfer Learning (MobileNetV2) Metrics</h4><img class="diagram" src="/tl_metrics.png" alt="Transfer Learning Metrics" /></div>
+        <div><h4>Custom CNN Architecture Diagram</h4><img class="diagram" src="/custom_cnn_diagram.png" alt="Custom CNN Diagram" /></div>
+        <div><h4>Transfer Learning Architecture Diagram</h4><img class="diagram" src="/transfer_learning_diagram.png" alt="Transfer Learning Diagram" /></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let customModel = null, tlModel = null;
+    const statusBox = document.getElementById('predictionResult');
+    const previewImg = document.getElementById('preview');
+
+    async function loadModels() {
+      try {
+        customModel = await tf.loadLayersModel('/models/custom_cnn/model.json');
+        tlModel = await tf.loadLayersModel('/models/mobilenetv2/model.json');
+        statusBox.innerHTML = "✅ Both models loaded and ready! Upload an image of a Rooster or Pigeon and click <strong>Classify Image</strong>.";
+      } catch (err) {
+        statusBox.innerHTML = "⚠️ Model loading note: " + err.message;
+      }
+    }
+    loadModels();
+
+    document.getElementById('imageUpload').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      previewImg.src = URL.createObjectURL(file);
+      previewImg.style.display = 'block';
+    });
+
+    async function runInference() {
+      if (!previewImg.src || previewImg.style.display === 'none') {
+        statusBox.innerHTML = "Please upload an image first.";
+        return;
+      }
+      statusBox.innerHTML = "Running CNN inference...";
+      const choice = document.getElementById('modelSelect').value;
+
+      // Convert HTML image to [1, 224, 224, 3] tensor in [0, 255] (models have internal Rescaling layers)
+      const tensor = tf.browser.fromPixels(previewImg).resizeBilinear([224, 224]).toFloat().expandDims(0);
+      let outputHTML = "";
+
+      if ((choice === 'both' || choice === 'custom') && customModel) {
+        const probRooster = (await customModel.predict(tensor).data())[0];
+        const probPigeon = 1 - probRooster;
+        const label = probRooster >= 0.5 ? "Rooster" : "Pigeon";
+        const conf = (Math.max(probRooster, probPigeon) * 100).toFixed(2);
+        outputHTML += `<p><strong>Custom Self-Designed CNN:</strong> ${label} (${conf}% confidence)<br/><small>Rooster: ${(probRooster*100).toFixed(1)}% | Pigeon: ${(probPigeon*100).toFixed(1)}%</small></p>`;
+      }
+
+      if ((choice === 'both' || choice === 'tl') && tlModel) {
+        const probRoosterTL = (await tlModel.predict(tensor).data())[0];
+        const probPigeonTL = 1 - probRoosterTL;
+        const labelTL = probRoosterTL >= 0.5 ? "Rooster" : "Pigeon";
+        const confTL = (Math.max(probRoosterTL, probPigeonTL) * 100).toFixed(2);
+        outputHTML += `<p><strong>Transfer Learning (MobileNetV2):</strong> ${labelTL} (${confTL}% confidence)<br/><small>Rooster: ${(probRoosterTL*100).toFixed(1)}% | Pigeon: ${(probPigeonTL*100).toFixed(1)}%</small></p>`;
+      }
+
+      tensor.dispose();
+      statusBox.innerHTML = outputHTML || "Models are still loading, please wait a moment and try again.";
+    }
+  </script>
+</body>
+</html>
