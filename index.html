@@ -4,25 +4,310 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rooster vs. Pigeon CNN Classifier | Muhammad Wasay Rafiq</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 24px; line-height: 1.6; }
-    .container { max-width: 1100px; margin: 0 auto; }
-    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    h1, h2, h3 { margin-top: 0; color: #0f172a; }
-    .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
-    .btn { background: #2563eb; color: #fff; padding: 10px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; border: none; cursor: pointer; font-size: 14px; }
-    .btn.secondary { background: #475569; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    img.diagram { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; }
-    #preview { max-width: 260px; border-radius: 8px; margin-top: 12px; display: none; border: 1px solid #cbd5e1; }
-    .result-box { background: #f1f5f9; padding: 16px; border-radius: 8px; font-size: 16px; min-height: 100px; }
-    @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+    :root {
+      --bg-latte: #f6efe9;
+      --bg-cream: #fffcf9;
+      --espresso-dark: #2c1a11;
+      --coffee-roast: #4a2c1d;
+      --mocha-medium: #6f4e37;
+      --caramel-accent: #9c6644;
+      --cinnamon-hover: #7f4f24;
+      --border-tan: #e0cec2;
+      --box-almond: #efe5dc;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-latte);
+      background-image: radial-gradient(circle at top right, #ede0d4 0%, #f6efe9 65%);
+      color: var(--espresso-dark);
+      margin: 0;
+      padding: 32px 20px;
+      line-height: 1.65;
+    }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--bg-cream);
+      border: 1px solid var(--border-tan);
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 28px;
+      box-shadow: 0 8px 24px rgba(44, 26, 17, 0.07);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      box-shadow: 0 12px 30px rgba(44, 26, 17, 0.11);
+    }
+
+    /* Hero Header Card */
+    .card.hero {
+      background: linear-gradient(135deg, var(--espresso-dark) 0%, var(--coffee-roast) 55%, var(--mocha-medium) 100%);
+      color: #fdf8f5;
+      border: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card.hero h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      color: #fffaf5;
+      font-size: 2rem;
+      letter-spacing: 0.3px;
+      margin-bottom: 10px;
+    }
+
+    .card.hero p {
+      color: #e6d5c7;
+      font-size: 1rem;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+
+    .card.hero strong {
+      color: #ffffff;
+    }
+
+    h1, h2, h3, h4 {
+      margin-top: 0;
+      color: var(--espresso-dark);
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      border-bottom: 2px solid var(--border-tan);
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+      color: var(--coffee-roast);
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      color: var(--mocha-medium);
+      margin-bottom: 12px;
+    }
+
+    h4 {
+      font-size: 1rem;
+      color: var(--coffee-roast);
+      margin-bottom: 10px;
+    }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .btn {
+      background: var(--caramel-accent);
+      color: #fffaf5;
+      padding: 11px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      cursor: pointer;
+      font-size: 14px;
+      display: inline-block;
+      transition: all 0.2s ease;
+      box-shadow: 0 3px 10px rgba(44, 26, 17, 0.15);
+    }
+
+    .btn:hover {
+      background: var(--cinnamon-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(44, 26, 17, 0.22);
+    }
+
+    .btn.secondary {
+      background: rgba(255, 250, 245, 0.14);
+      backdrop-filter: blur(6px);
+      color: #fffaf5;
+      border: 1px solid rgba(255, 250, 245, 0.3);
+    }
+
+    .btn.secondary:hover {
+      background: rgba(255, 250, 245, 0.26);
+      border-color: #fffaf5;
+    }
+
+    #classifyBtn {
+      background: linear-gradient(135deg, var(--mocha-medium), var(--coffee-roast));
+      padding: 12px 24px;
+      font-size: 15px;
+      margin-top: 8px;
+      width: 100%;
+      max-width: 340px;
+    }
+
+    #classifyBtn:hover {
+      background: linear-gradient(135deg, var(--coffee-roast), var(--espresso-dark));
+    }
+
+    /* Layout Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* Form Controls */
+    label {
+      color: var(--coffee-roast);
+      font-size: 0.95rem;
+      display: inline-block;
+      margin-bottom: 6px;
+    }
+
+    input[type="file"] {
+      display: block;
+      width: 100%;
+      max-width: 340px;
+      padding: 10px;
+      margin: 4px 0 16px 0;
+      background: var(--box-almond);
+      border: 1px dashed var(--mocha-medium);
+      border-radius: 8px;
+      color: var(--espresso-dark);
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    input[type="file"]::file-selector-button {
+      background: var(--mocha-medium);
+      color: #fffaf5;
+      border: none;
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-weight: 600;
+      margin-right: 12px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    input[type="file"]::file-selector-button:hover {
+      background: var(--coffee-roast);
+    }
+
+    select#modelSelect {
+      padding: 11px 14px;
+      width: 100%;
+      max-width: 340px;
+      margin: 4px 0 16px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border-tan);
+      background-color: var(--box-almond);
+      color: var(--espresso-dark);
+      font-size: 14px;
+      font-weight: 500;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    select#modelSelect:focus {
+      border-color: var(--mocha-medium);
+    }
+
+    /* Image Preview & Diagrams */
+    #preview {
+      max-width: 280px;
+      border-radius: 12px;
+      margin-top: 16px;
+      display: none;
+      border: 3px solid var(--border-tan);
+      box-shadow: 0 6px 16px rgba(44, 26, 17, 0.12);
+    }
+
+    img.diagram {
+      width: 100%;
+      border: 1px solid var(--border-tan);
+      border-radius: 10px;
+      background: #ffffff;
+      padding: 8px;
+      box-shadow: 0 3px 10px rgba(44, 26, 17, 0.05);
+    }
+
+    /* Prediction Result Box */
+    .result-box {
+      background: var(--box-almond);
+      border: 1px solid var(--border-tan);
+      border-left: 5px solid var(--mocha-medium);
+      padding: 20px;
+      border-radius: 10px;
+      font-size: 15.5px;
+      min-height: 130px;
+      color: var(--espresso-dark);
+      box-shadow: inset 0 2px 4px rgba(44, 26, 17, 0.03);
+    }
+
+    .result-box p {
+      margin: 0 0 14px 0;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-tan);
+    }
+
+    .result-box p:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .result-box small {
+      color: var(--mocha-medium);
+      font-weight: 500;
+    }
+
+    /* Lists & Code */
+    ul {
+      padding-left: 20px;
+      margin-bottom: 0;
+    }
+
+    li {
+      margin-bottom: 10px;
+    }
+
+    code {
+      background: var(--box-almond);
+      color: var(--coffee-roast);
+      padding: 3px 7px;
+      border-radius: 5px;
+      font-size: 0.9em;
+      font-weight: 600;
+      border: 1px solid var(--border-tan);
+    }
+
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      .card.hero h1 {
+        font-size: 1.6rem;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="card">
+    <div class="card hero">
       <h1>Deep Learning Semester Project: Rooster vs. Pigeon CNN Classification</h1>
       <p><strong>Student:</strong> Muhammad Wasay Rafiq (SU92-BCSFM-F24-002) | <strong>Instructor:</strong> Dr. Munir Ahmad | <strong>Superior University Lahore</strong></p>
       <div class="btn-row">
@@ -37,10 +322,10 @@
       <h2>1. Live Image Classification (Custom CNN & Transfer Learning)</h2>
       <div class="grid">
         <div>
-          <label><strong>Step 1: Select Input Image (Rooster or Pigeon):</strong></label><br/>
-          <input type="file" id="imageUpload" accept="image/*" style="margin: 10px 0;" /><br/>
-          <label><strong>Step 2: Choose Model Architecture:</strong></label><br/>
-          <select id="modelSelect" style="padding: 8px; width: 100%; max-width: 320px; margin: 10px 0;">
+          <label><strong>Step 1: Select Input Image (Rooster or Pigeon):</strong></label>
+          <input type="file" id="imageUpload" accept="image/*" />
+          <label><strong>Step 2: Choose Model Architecture:</strong></label>
+          <select id="modelSelect">
             <option value="both">Compare Both Models (Custom CNN + MobileNetV2)</option>
             <option value="custom">Custom Self-Designed CNN Only</option>
             <option value="tl">Transfer Learning (MobileNetV2) Only</option>
