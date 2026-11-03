@@ -50,7 +50,7 @@
         </div>
         <div>
           <h3>Prediction Results</h3>
-          <div id="predictionResult" class="result-box">Loading CNN models into browser memory...</div>
+          <div id="predictionResult" class="result-box">Loading TensorFlow.js graph models into browser memory...</div>
         </div>
       </div>
     </div>
@@ -84,9 +84,10 @@
 
     async function loadModels() {
       try {
-        customModel = await tf.loadLayersModel('/models/custom_cnn/model.json');
-        tlModel = await tf.loadLayersModel('/models/mobilenetv2/model.json');
-        statusBox.innerHTML = "✅ Both models loaded and ready! Upload an image of a Rooster or Pigeon and click <strong>Classify Image</strong>.";
+        // Use loadGraphModel to successfully load compiled tfjs graphs
+        customModel = await tf.loadGraphModel('/models/custom_cnn/model.json');
+        tlModel = await tf.loadGraphModel('/models/mobilenetv2/model.json');
+        statusBox.innerHTML = "✅ Both models successfully loaded! Upload an image of a Rooster or Pigeon and click <strong>Classify Image</strong>.";
       } catch (err) {
         statusBox.innerHTML = "⚠️ Model loading note: " + err.message;
       }
@@ -108,24 +109,40 @@
       statusBox.innerHTML = "Running CNN inference...";
       const choice = document.getElementById('modelSelect').value;
 
-      // Convert HTML image to [1, 224, 224, 3] tensor in [0, 255] (models have internal Rescaling layers)
-      const tensor = tf.browser.fromPixels(previewImg).resizeBilinear([224, 224]).toFloat().expandDims(0);
+      // Preprocess input image to [1, 224, 224, 3] float tensor
+      const tensor = tf.tidy(() => {
+        return tf.browser.fromPixels(previewImg)
+          .resizeBilinear([224, 224])
+          .toFloat()
+          .expandDims(0);
+      });
+
       let outputHTML = "";
 
-      if ((choice === 'both' || choice === 'custom') && customModel) {
-        const probRooster = (await customModel.predict(tensor).data())[0];
-        const probPigeon = 1 - probRooster;
-        const label = probRooster >= 0.5 ? "Rooster" : "Pigeon";
-        const conf = (Math.max(probRooster, probPigeon) * 100).toFixed(2);
-        outputHTML += `<p><strong>Custom Self-Designed CNN:</strong> ${label} (${conf}% confidence)<br/><small>Rooster: ${(probRooster*100).toFixed(1)}% | Pigeon: ${(probPigeon*100).toFixed(1)}%</small></p>`;
-      }
+      try {
+        if ((choice === 'both' || choice === 'custom') && customModel) {
+          const prediction = customModel.predict(tensor);
+          const data = await prediction.data();
+          const probRooster = Number(data[0]);
+          const probPigeon = 1 - probRooster;
+          const label = probRooster >= 0.5 ? "Rooster" : "Pigeon";
+          const conf = (Math.max(probRooster, probPigeon) * 100).toFixed(2);
+          outputHTML += `<p><strong>Custom Self-Designed CNN:</strong> ${label} (${conf}% confidence)<br/><small>Rooster: ${(probRooster*100).toFixed(1)}% | Pigeon: ${(probPigeon*100).toFixed(1)}%</small></p>`;
+          prediction.dispose();
+        }
 
-      if ((choice === 'both' || choice === 'tl') && tlModel) {
-        const probRoosterTL = (await tlModel.predict(tensor).data())[0];
-        const probPigeonTL = 1 - probRoosterTL;
-        const labelTL = probRoosterTL >= 0.5 ? "Rooster" : "Pigeon";
-        const confTL = (Math.max(probRoosterTL, probPigeonTL) * 100).toFixed(2);
-        outputHTML += `<p><strong>Transfer Learning (MobileNetV2):</strong> ${labelTL} (${confTL}% confidence)<br/><small>Rooster: ${(probRoosterTL*100).toFixed(1)}% | Pigeon: ${(probPigeonTL*100).toFixed(1)}%</small></p>`;
+        if ((choice === 'both' || choice === 'tl') && tlModel) {
+          const predictionTL = tlModel.predict(tensor);
+          const dataTL = await predictionTL.data();
+          const probRoosterTL = Number(dataTL[0]);
+          const probPigeonTL = 1 - probRoosterTL;
+          const labelTL = probRoosterTL >= 0.5 ? "Rooster" : "Pigeon";
+          const confTL = (Math.max(probRoosterTL, probPigeonTL) * 100).toFixed(2);
+          outputHTML += `<p><strong>Transfer Learning (MobileNetV2):</strong> ${labelTL} (${confTL}% confidence)<br/><small>Rooster: ${(probRoosterTL*100).toFixed(1)}% | Pigeon: ${(probPigeonTL*100).toFixed(1)}%</small></p>`;
+          predictionTL.dispose();
+        }
+      } catch (e) {
+        outputHTML = "Inference Error: " + e.message;
       }
 
       tensor.dispose();
