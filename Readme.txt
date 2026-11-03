@@ -24,7 +24,7 @@ This web application runs 100% natively on Vercel using TensorFlow.js.
 
 3. PROJECT LINKS
 --------------------------------------------------------------------------------
-- Google Drive Dataset Link: YOUR_GOOGLE_DRIVE_DATASET_LINK
-- Downloadable Models & Weights Folder: YOUR_GOOGLE_DRIVE_EXPORTS_LINK
-- Project Report (PDF): YOUR_GOOGLE_DRIVE_REPORT_LINK
+- Google Drive Dataset Link: https://drive.google.com/drive/folders/1E4AzB4EPuMQ5bczxTejZ2s0moncJtGzL?usp=sharing
+- Downloadable Models & Weights Folder: https://drive.google.com/drive/folders/1IuwIsPV-TMsg-QDJpG4IBjZYL73MbKpl?usp=sharing
+- Project Report (PDF): https://drive.google.com/file/d/10zO0sceUlzDd_UgERSmvVjo5cAnQFRED/view?usp=sharing
 ================================================================================
